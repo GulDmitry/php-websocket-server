@@ -1,13 +1,17 @@
 <?php
+use WebSocket as W;
+use WebSocket\Application as WA;
 
-error_reporting(E_ALL);
+// autoload function
+function __autoload($class)
+{
+    // convert namespace to full file path
+    $class = '' . str_replace('\\', '/', $class) . '.php';
+    require_once($class);
+}
 
-require(__DIR__ . '/lib/SplClassLoader.php');
+$config = parse_ini_file('config.ini');
 
-$classLoader = new SplClassLoader('WebSocket', __DIR__ . '/lib');
-$classLoader->register();
-
-$server = new \WebSocket\Server('localhost', 8000);
-$server->registerApplication('echo', \WebSocket\Application\EchoApplication::getInstance());
-$server->registerApplication('time', \WebSocket\Application\TimeApplication::getInstance());
+$server = new W\Server($config['address'], $config['port']);
+$server->registerApplication('example', WA\ExampleApplication::getInstance());
 $server->run();

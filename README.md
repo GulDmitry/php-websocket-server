@@ -1,70 +1,141 @@
-PHP WebSocket
+PHP WebSocket (fork)
 =============
 
-A simple PHP 5.3 WebSocket server implementation that follows draft 75 and draft 76 if the WebSockets specification.
+##Changes
 
-- Supports draft 75 and draft 76 of WebSocket RFC
-- Supports Flash Socket Policy requests
-- Application module, the server can be extended by custom behaviors
+### 1. Native namespaces
 
-## Server example
+### 2. New methods
 
-This creates a server on localhost:8000 with one Application that listens on `ws://localhost:8000/echo`:
+####Connection object.
 
-	$server = new \WebSocket\Server('localhost', 8000);
-	$server->registerApplication('echo', \WebSocket\Application\EchoApplication::getInstance());
-	$server->run();
+    /**
+     * Send to current socket
+     * 
+     * @param string $data 
+     */
+    public function send($data)
 
-## Example server Application
+-------------------------------------------------------
 
-This server Applications simply echoes all messages back to all connected clients.
+    /**
+     * Send to all server sockets
+     * 
+     * @param string $message 
+     */
+    public function sendServer($message)
 
-	class EchoApplication extends Application
-	{
-	    private $clients = array();
+    /**
+     * Broadcats to all server sockets
+     * 
+     * @param string $message 
+     */
+    public function broadcastServer($message)
 
-		public function onConnect($client)
-	    {
-	        $this->clients[] = $client;
-	    }
+-------------------------------------------------------
+    
+    /**
+     * Custom counter increment
+     * 
+     * @param int $num 
+     */
+    public function incrementMsgStack($num)
 
-	    public function onDisconnect($client)
-	    {
-	        $key = array_search($client, $this->clients);
-	        if ($key) {
-	            unset($this->clients[$key]);
-	        }
-	    }
+    /**
+     * Custom counter decrement
+     * 
+     * @param int $num 
+     */
+    public function decrementMsgStack($num)
 
-	    public function onData($data, $client)
-	    {
-	        foreach ($this->clients as $sendto) {
-	            $sendto->send($data);
-	        }
-	    }
-	}
+    /**
+     * Reset counter
+     */
+    public function resetMsgStack()
+
+-------------------------------------------------------
+    
+    /**
+     * Socket standing
+     * 
+     * @return bool TRUE if socket open, else FALSE
+     */
+    public function getSocketAlive()
+
+-------------------------------------------------------
+    
+    /**
+     * Send to current connection group if $key = false
+     * 
+     * @param mixed $key Group identifier
+     * @param string $message 
+     */
+    public function sendGroup($message, $key = false)
+
+
+    /**
+     * Broadcast to current connection group if $key = false
+     *
+     * @param mixed $key Group identifier
+     * @param string $message 
+     */
+    public function broadcastGroup($message, $key = false)
+
+    /**
+     *
+     * @param mixed $key
+     * @param Connection $connection 
+     */
+    public function setGroup($key)
+
+    /**
+     * @param mixed $key
+     * @return mixe Connections in group with $key, or false if group not exists
+     */
+    public function getConnectionsByGroupKey($key)
+
+    /**
+     * Get current socket group key
+     * 
+     * @return mixed Group key or false
+     */
+    public function getGroup()
+
+#### Application class.
+
+    /**
+     * Send to application sockets
+     * 
+     * @param string $message 
+     */
+    public function sendApp($message)
+
+    /**
+     * Send to application sockets with exclude
+     *
+     * @param Connection $excludeConnection
+     * @param string $message 
+     */
+    public function broadcastApp($excludeConnection, $message)
+
+## Example start
+
+    1. Register application(s) (server.php)
+    
+    2. Start server: php server.php
+    Run server script as root (and port 843(!)), or (custom user or port) run other script:
+    script that listens on port 843 and returns a Socket Policy XML string for Flash players.
+    (See http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security_04.html for details.)
+
+    2. Connect to applicaton: run client/index.html in browser
 
 ## Client
 
-	var server = new WebPush('ws://localhost:8000/echo');
-	
-	server.bind('open', function() {
-		// Connection openend...
-		server.send("Hello, I'm there!");
-	});
-	
-	server.bind('close', function() {
-		// Connection closed... 
-	});
-	
-	server.bind('message', function(data) {
-		// Data received
-	});	
+    See client/index.html
 
 ## Libraries used
 
-- [SplClassLoader](http://gist.github.com/221634) by the PHP Standards Working Group
+- [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser 
 - [phpWebSockets](http://code.google.com/p/phpwebsockets/) by Moritz Wutz
+- [web-socket-js](http://github.com/gimite/web-socket-js) by Hiroshi Ichikawa (example)
 - [jQuery](http://jquery.com/)
-- [web-socket-js](http://github.com/gimite/web-socket-js) by Hiroshi Ichikawa
-- [SWFObject](http://code.google.com/p/swfobject/)
