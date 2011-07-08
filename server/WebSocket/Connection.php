@@ -121,32 +121,37 @@ class Connection extends Server
 
     private function handle($data)
     {
+        $this->log($data);
+
         $chunks = explode(chr(255), $data);
 
-        for ($i = 0; $i < count($chunks) - 1; $i++) {
+        $cnt = count($chunks) - 1;
+
+        for ($i = 0; $i < $cnt; $i++) {
             $chunk = $chunks[$i];
             if (substr($chunk, 0, 1) != chr(0)) {
                 $this->log('Data incorrectly framed. Dropping connection');
-                socket_close($this->_socket);
 
-                //if use saved socket in application
-                $this->_socket = null;
+                //onDisconnect application
+                $this->_application->onDisconnect($this);
 
                 //remove from server class
                 $this->_server->socketDisconnect($this);
 
-                //onDisconnect application
-                $this->_application->onDisconnect($this);
-                return false;
+                socket_close($this->_socket);
+
+                $this->_socket = null;
+
+                return;
             }
+
+            $this->log('Data framed correctly.');
             $this->_application->onData(substr($chunk, 1), $this);
         }
-
-        return true;
     }
 
     /**
-     * Work if port 843 licen as root
+     * Work if port 843 listen as root
      */
     private function serveFlashPolicy()
     {
@@ -194,14 +199,15 @@ class Connection extends Server
 
     public function onDisconnect()
     {
-        $this->log('Disconnected', 'info');
+        $this->log('Disconnected');
 
         if ($this->_application) {
             // remove from app stack
             $this->_application->onDisconnect($this);
-            // remove from server stack
-            $this->_server->socketDisconnect($this);
         }
+        // remove from server stack
+        $this->_server->socketDisconnect($this);
+
         socket_close($this->_socket);
     }
 
@@ -227,15 +233,17 @@ class Connection extends Server
     }
 
     /**
-     * Console log
+     * Console log. Work in debug mode
      * 
      * @param string $message
-     * @param string $type 
+     * @param string $type = 'info'
      */
     public function log($message, $type = 'info')
     {
-        socket_getpeername($this->_socket, $addr, $port);
-        $this->_server->log('[client ' . $addr . ':' . $port . '] ' . $message, $type);
+        if ($this->_server->_debug) {
+            socket_getpeername($this->_socket, $addr, $port);
+            $this->_server->log('[client ' . $addr . ':' . $port . '] ' . $message, $type);
+        }
     }
 
     /**
@@ -311,7 +319,7 @@ class Connection extends Server
         if ($key != false) {
             $this->_group = $key;
             $this->_server->addToGroup($key, $this);
-            $this->log('Connection add in group: ' . $key);
+            $this->log('Connection join to group: ' . $key);
         }
     }
 

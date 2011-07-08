@@ -11,10 +11,12 @@ namespace WebSocket;
 class Server extends Socket
 {
 
+    // Contain: socket obj => Connection obj
     private $_clients = array();
     private $_applications = array();
     // For group ability
     private $_groups = array();
+    protected $_debug = 0;
 
     public function __construct($host = 'localhost', $port = 8000, $max = 100)
     {
@@ -26,14 +28,17 @@ class Server extends Socket
     public function run()
     {
         while (true) {
+            // open sockets. Contain 1 master socket
             $changed_sockets = $this->allsockets;
             @socket_select($changed_sockets, $write = NULL, $except = NULL, 1);
             foreach ($this->_applications as $application) {
                 $application->onTick();
             }
             foreach ($changed_sockets as $socket) {
+                // client connect first time
                 if ($socket == $this->master) {
-                    if (($ressource = socket_accept($this->master)) < 0) {
+                    $ressource = socket_accept($this->master);
+                    if ($ressource < 0) {
                         $this->log('Socket error: ' . socket_strerror(socket_last_error($ressource)));
                         continue;
                     } else {
@@ -41,21 +46,32 @@ class Server extends Socket
                         $this->_clients[$ressource] = $client;
                         $this->allsockets[] = $ressource;
                     }
+                    // client send message or disconnect
                 } else {
                     $client = $this->_clients[$socket];
                     $bytes = @socket_recv($socket, $data, 4096, 0);
+
+                    //client disconnected
                     if ($bytes === 0) {
                         $client->onDisconnect();
-                        unset($this->_clients[$socket]);
-                        $index = array_search($socket, $this->allsockets);
-                        unset($this->allsockets[$index]);
                         unset($client);
                     } else {
+                        // $data - all data with headers
                         $client->onData($data);
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Enable\Disable debug mode
+     * 
+     * @param bool $flag 
+     */
+    public function setDebug($flag)
+    {
+        $this->_debug = (bool) $flag;
     }
 
     public function getApplication($key)
@@ -123,9 +139,13 @@ class Server extends Socket
      */
     protected function socketDisconnect($connect)
     {
-        $key = array_search($connect, $this->_clients);
-        if ($key) {
-            unset($this->_clients[$key]);
+        $socketKey = array_search($connect, $this->_clients);
+
+        $sKey = array_search($socketKey, $this->allsockets);
+
+        if ($socketKey && $sKey) {
+            unset($this->_clients[$socketKey]);
+            unset($this->allsockets[$sKey]);
         }
     }
 
@@ -188,6 +208,19 @@ class Server extends Socket
 
             $v->send($message);
         }
+    }
+
+    /**
+     * Return connections and sockets (with master socket) count
+     * 
+     * @return array ['cliets', 'sockets']
+     */
+    public function showSocketsInfoCount()
+    {
+        return array(
+            'clients' => count($this->_clients),
+            'sockets' => count($this->allsockets)
+        );
     }
 
 }

@@ -1,4 +1,5 @@
 <?php
+
 use WebSocket as W;
 use WebSocket\Application as WA;
 
@@ -14,4 +15,6 @@ $config = parse_ini_file('config.ini');
 
 $server = new W\Server($config['address'], $config['port']);
 $server->registerApplication('example', WA\ExampleApplication::getInstance());
+// show Connection log (connect, disconnect, data receive...)
+$server->setDebug($config['debug']);
 $server->run();
