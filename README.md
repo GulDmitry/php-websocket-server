@@ -1,5 +1,7 @@
-PHP WebSocket (fork)
-=============
+PHP WebSocket Server
+====================
+
+Based on [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser
 
 ##Changes
 
@@ -8,6 +10,8 @@ PHP WebSocket (fork)
 ### 2. New methods
 
 ####Connection object.
+
+Send\broadcast to all server, application or application group connections.
 
     /**
      * Send to current socket
@@ -118,13 +122,13 @@ PHP WebSocket (fork)
      */
     public function broadcastApp($excludeConnection, $message)
 
-## Example start
+## Start
 
     1. Register application(s) (server.php)
     
     2. Start server: php server.php
-    Run server script as root (and port 843(!)), or (custom user or port) run other script:
-    script that listens on port 843 and returns a Socket Policy XML string for Flash players.
+    Run server script as root (and port 843(!)). If you want custom user or port run other script
+    that listens on port 843 and returns a Socket Policy XML string for Flash players.
     (See http://www.adobe.com/devnet/flashplayer/articles/fplayer9_security_04.html for details.)
 
     2. Connect to applicaton: run client/index.html in browser
