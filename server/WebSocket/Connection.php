@@ -8,7 +8,7 @@ namespace WebSocket;
  * @author Nico Kaiser <nico@kaiser.me>
  * @author Dmitru Gulyakevich
  */
-class Connection extends Server
+class Connection
 {
 
     private $_server = null;
@@ -119,6 +119,13 @@ class Connection extends Server
         }
     }
 
+    /**
+     * See http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76#section-4.2
+     * input must be either 0x00...0xFF or 0x000xFF
+     * 0x00 - chr(0); 0xFF - char(255)
+     * 
+     * @param string $data
+     */
     private function handle($data)
     {
         $this->log($data);
@@ -128,7 +135,9 @@ class Connection extends Server
         $cnt = count($chunks) - 1;
 
         for ($i = 0; $i < $cnt; $i++) {
+
             $chunk = $chunks[$i];
+
             if (substr($chunk, 0, 1) != chr(0)) {
                 $this->log('Data incorrectly framed. Dropping connection');
 
@@ -240,7 +249,7 @@ class Connection extends Server
      */
     public function log($message, $type = 'info')
     {
-        if ($this->_server->_debug) {
+        if ($this->_server->getDebug()) {
             socket_getpeername($this->_socket, $addr, $port);
             $this->_server->log('[client ' . $addr . ':' . $port . '] ' . $message, $type);
         }

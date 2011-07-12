@@ -11,7 +11,7 @@ Based on [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Ka
 
 ####Connection object.
 
-Send\broadcast to all server, application or application group connections.
+Send\broadcast to all server, application and group connections.
 
     /**
      * Send to current socket
@@ -142,4 +142,4 @@ Send\broadcast to all server, application or application group connections.
 - [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser 
 - [phpWebSockets](http://code.google.com/p/phpwebsockets/) by Moritz Wutz
 - [web-socket-js](http://github.com/gimite/web-socket-js) by Hiroshi Ichikawa (example)
-- [jQuery](http://jquery.com/)
+- [jQuery](http://jquery.com/) (example)

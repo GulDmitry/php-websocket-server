@@ -11,12 +11,12 @@ namespace WebSocket;
 class Server extends Socket
 {
 
-    // Contain: socket obj => Connection obj
+    // Contain: socket obj (key) => Connection obj (value)
     private $_clients = array();
     private $_applications = array();
     // For group ability
     private $_groups = array();
-    protected $_debug = 0;
+    private $_debug = false;
 
     public function __construct($host = 'localhost', $port = 8000, $max = 100)
     {
@@ -74,6 +74,16 @@ class Server extends Socket
         $this->_debug = (bool) $flag;
     }
 
+    /**
+     * Get debug mode
+     * 
+     * @return bool debug 
+     */
+    public function getDebug()
+    {
+        return (bool) $this->_debug;
+    }
+
     public function getApplication($key)
     {
         if (array_key_exists($key, $this->_applications)) {
@@ -104,7 +114,7 @@ class Server extends Socket
      * 
      * @param string $message 
      */
-    protected function send($message)
+    public function send($message)
     {
         foreach ($this->_clients as $v) {
             $v->send($message);
@@ -118,7 +128,7 @@ class Server extends Socket
      * @param Connection $excludeConnection
      * @param string $message 
      */
-    protected function broadcast($excludeConnection, $message)
+    public function broadcast($excludeConnection, $message)
     {
         $clientKey = array_search($excludeConnection, $this->_clients);
 
@@ -137,7 +147,7 @@ class Server extends Socket
      * 
      * @param Connection $connect 
      */
-    protected function socketDisconnect($connect)
+    public function socketDisconnect($connect)
     {
         $socketKey = array_search($connect, $this->_clients);
 
@@ -175,7 +185,7 @@ class Server extends Socket
      * @param mixed $key Group identifier
      * @param string $message 
      */
-    protected function sendGroup($message, $key)
+    public function sendGroup($message, $key)
     {
         if ($key === false) {
             return;
@@ -193,7 +203,7 @@ class Server extends Socket
      * @param Connection $excludeConnectio
      * @param mixed $key Group identifier
      */
-    protected function broadcastGroup($message, $excludeConnection, $key)
+    public function broadcastGroup($message, $excludeConnection, $key)
     {
         if ($key === false) {
             return;
