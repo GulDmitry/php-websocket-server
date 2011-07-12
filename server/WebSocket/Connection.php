@@ -121,7 +121,7 @@ class Connection
 
     /**
      * See http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76#section-4.2
-     * input must be either 0x00...0xFF or 0x000xFF
+     * input must be either 0x00...0xFF or 0x00|0xFF
      * 0x00 - chr(0); 0xFF - char(255)
      * 
      * @param string $data

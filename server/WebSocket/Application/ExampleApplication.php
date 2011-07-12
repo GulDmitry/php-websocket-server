@@ -64,7 +64,6 @@ class ExampleApplication extends Application
         $this->sendApp($data->comment);
         $this->broadcastApp($client, $data->comment);
         
-
     }
 
 }
