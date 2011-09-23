@@ -18,17 +18,17 @@ class Socket
     /**
      * @var Socket Holds the master socket
      */
-    protected $master;
+    protected $_master;
 
     /**
      * @var array Holds all connected sockets
      */
-    protected $allsockets = array();
+    protected $_allsockets = array();
 
     public function __construct($host = 'localhost', $port = 8000, $max = 100)
     {
         ob_implicit_flush(true);
-        $this->createSocket($host, $port);
+        $this->_createSocket($host, $port);
     }
 
     /**
@@ -37,30 +37,30 @@ class Socket
      * @param string $host The host/bind address to use
      * @param int $port The actual port to bind on
      */
-    private function createSocket($host, $port)
+    private function _createSocket($host, $port)
     {
-        if (($this->master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) < 0) {
-            die("socket_create() failed, reason: " . socket_strerror($this->master));
+        if (($this->_master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) < 0) {
+            die("socket_create() failed, reason: " . socket_strerror($this->_master));
         }
 
-        self::console("Socket {$this->master} created.");
+        self::console("Socket {$this->_master} created.");
 
-        socket_set_option($this->master, SOL_SOCKET, SO_REUSEADDR, 1);
+        socket_set_option($this->_master, SOL_SOCKET, SO_REUSEADDR, 1);
         #socket_set_option($master,SOL_SOCKET,SO_KEEPALIVE,1);
 
-        if (($ret = socket_bind($this->master, $host, $port)) < 0) {
+        if (($ret = socket_bind($this->_master, $host, $port)) < 0) {
             die("socket_bind() failed, reason: " . socket_strerror($ret));
         }
 
         self::console("Socket bound to {$host}:{$port}.");
 
-        if (($ret = socket_listen($this->master, 5)) < 0) {
+        if (($ret = socket_listen($this->_master, 5)) < 0) {
             die("socket_listen() failed, reason: " . socket_strerror($ret));
         }
 
         self::console('Start listening on Socket.');
 
-        $this->allsockets[] = $this->master;
+        $this->_allsockets[] = $this->_master;
     }
 
     /**
@@ -69,7 +69,7 @@ class Socket
      * @param string $msg The message
      * @param string $type The type of the message
      */
-    protected function console($msg, $type='System')
+    public function console($msg, $type='System')
     {
         /* $msg = explode("\n", $msg);
         foreach ($msg as $line)
@@ -81,7 +81,7 @@ class Socket
      * @param socket $client The destination socket
      * @param string $msg The message
      */
-    protected function send($client, $msg)
+    public function send($client, $msg)
     {
         socket_write($client, $msg, strlen($msg));
     }

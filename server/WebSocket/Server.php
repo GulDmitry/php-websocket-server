@@ -29,22 +29,22 @@ class Server extends Socket
     {
         while (true) {
             // open sockets. Contain 1 master socket
-            $changed_sockets = $this->allsockets;
+            $changed_sockets = $this->_allsockets;
             @socket_select($changed_sockets, $write = NULL, $except = NULL, 1);
             foreach ($this->_applications as $application) {
                 $application->onTick();
             }
             foreach ($changed_sockets as $socket) {
                 // client connect first time
-                if ($socket == $this->master) {
-                    $ressource = socket_accept($this->master);
+                if ($socket == $this->_master) {
+                    $ressource = socket_accept($this->_master);
                     if ($ressource < 0) {
                         $this->log('Socket error: ' . socket_strerror(socket_last_error($ressource)));
                         continue;
                     } else {
                         $client = new Connection($this, $ressource);
                         $this->_clients[$ressource] = $client;
-                        $this->allsockets[] = $ressource;
+                        $this->_allsockets[] = $ressource;
                     }
                     // client send message or disconnect
                 } else {
@@ -151,11 +151,11 @@ class Server extends Socket
     {
         $socketKey = array_search($connect, $this->_clients);
 
-        $sKey = array_search($socketKey, $this->allsockets);
+        $sKey = array_search($socketKey, $this->_allsockets);
 
         if ($socketKey && $sKey) {
             unset($this->_clients[$socketKey]);
-            unset($this->allsockets[$sKey]);
+            unset($this->_allsockets[$sKey]);
         }
     }
 
@@ -229,7 +229,7 @@ class Server extends Socket
     {
         return array(
             'clients' => count($this->_clients),
-            'sockets' => count($this->allsockets)
+            'sockets' => count($this->_allsockets)
         );
     }
 

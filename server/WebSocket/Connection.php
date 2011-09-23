@@ -20,7 +20,6 @@ class Connection
     // Connection group identification
     private $_group = false;
 
-
     public function __construct($server, $socket)
     {
         $this->_server = $server;
@@ -35,14 +34,14 @@ class Connection
      * @param string $data
      * @return bool 
      */
-    private function handshake($data)
+    private function _handshake($data)
     {
         $this->log('Performing handshake');
 
         $lines = preg_split("/\r\n/", $data);
         if (count($lines) && preg_match('/<policy-file-request.*>/', $lines[0])) {
             $this->log('Flash policy file request');
-            $this->serveFlashPolicy();
+            $this->_serverFlashPolicy();
             return false;
         }
 
@@ -64,7 +63,10 @@ class Connection
         $key3 = '';
         preg_match("#\r\n(.*?)\$#", $data, $match) && $key3 = $match[1];
 
-        $origin = $headers['Origin'];
+        $origin = '';
+        if (array_key_exists('Origin', $headers)) {
+            $origin = $headers['Origin'];
+        }
         $host = $headers['Host'];
 
         $this->_application = $this->_server->getApplication(substr($path, 1)); // e.g. '/echo'
@@ -76,20 +78,32 @@ class Connection
 
         $status = '101 Web Socket Protocol Handshake';
         if (array_key_exists('Sec-WebSocket-Key1', $headers)) {
-            // draft-76
+            $this->log('draft-76');
+
             $def_header = array(
                 'Sec-WebSocket-Origin' => $origin,
                 'Sec-WebSocket-Location' => "ws://{$host}{$path}"
             );
-            $digest = $this->securityDigest($headers['Sec-WebSocket-Key1'], $headers['Sec-WebSocket-Key2'], $key3);
+            $digest = '\r\n' . $this->_securityDigest76($headers['Sec-WebSocket-Key1'], $headers['Sec-WebSocket-Key2'], $key3);
+        } elseif (array_key_exists('Sec-WebSocket-Key', $headers)) {
+            $this->log('draft-ietf-hybi-protocol-07');
+            //http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07
+
+            $def_header = array(
+                'Sec-WebSocket-Accept' => $this->_securityDigest07($headers['Sec-WebSocket-Key']),
+                'Sec-WebSocket-Protocol' => 'chat'
+            );
+            $digest = '';
         } else {
-            // draft-75
+            $this->log('draft-75');
+
             $def_header = array(
                 'WebSocket-Origin' => $origin,
                 'WebSocket-Location' => "ws://{$host}{$path}"
             );
             $digest = '';
         }
+
         $header_str = '';
         foreach ($def_header as $key => $value) {
             $header_str .= $key . ': ' . $value . "\r\n";
@@ -98,7 +112,7 @@ class Connection
         $upgrade = "HTTP/1.1 ${status}\r\n" .
                 "Upgrade: WebSocket\r\n" .
                 "Connection: Upgrade\r\n" .
-                "${header_str}\r\n$digest";
+                "${header_str}$digest";
 
         socket_write($this->_socket, $upgrade, strlen($upgrade));
 
@@ -113,9 +127,9 @@ class Connection
     public function onData($data)
     {
         if ($this->_handshaked) {
-            $this->handle($data);
+            $this->_handle($data);
         } else {
-            $this->handshake($data);
+            $this->_handshake($data);
         }
     }
 
@@ -126,7 +140,7 @@ class Connection
      * 
      * @param string $data
      */
-    private function handle($data)
+    private function _handle($data)
     {
         $this->log($data);
 
@@ -162,7 +176,7 @@ class Connection
     /**
      * Work if port 843 listen as root
      */
-    private function serveFlashPolicy()
+    private function _serverFlashPolicy()
     {
         $policy = '<?xml version="1.0"?>' . "\n";
         $policy .= '<!DOCTYPE cross-domain-policy SYSTEM "http://www.macromedia.com/xml/dtds/cross-domain-policy.dtd">' . "\n";
@@ -220,12 +234,17 @@ class Connection
         socket_close($this->_socket);
     }
 
-    private function securityDigest($key1, $key2, $key3)
+    private function _securityDigest($key1, $key2, $key3)
     {
         return md5(
-                pack('N', $this->keyToBytes($key1)) .
-                pack('N', $this->keyToBytes($key2)) .
-                $key3, true);
+                        pack('N', $this->_keyToBytes($key1)) .
+                        pack('N', $this->_keyToBytes($key2)) .
+                        $key3, true);
+    }
+
+    private function _securityDigest07($key)
+    {
+        return base64_decode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
     }
 
     /**
@@ -234,7 +253,7 @@ class Connection
      * 
      * @param int $key
      */
-    private function keyToBytes($key)
+    private function _keyToBytes($key)
     {
         return preg_match_all('#[0-9]#', $key, $number) && preg_match_all('# #', $key, $space) ?
                 implode('', $number[0]) / count($space[0]) :
