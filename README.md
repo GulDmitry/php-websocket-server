@@ -1,6 +1,8 @@
 PHP WebSocket Server
 ====================
 
+IN PROGRESS...DO NOT DOWNLOAD.
+
 Based on [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser
 
 [+] Add [protocol 07](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07) 
