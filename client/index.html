@@ -10,7 +10,7 @@
         <script type="text/javascript" src="jquery-1.6.4.min.js"></script>
 
         <script type="text/javascript">
-
+            
             // Everything below is the same as using standard WebSocket.
             var WSobj;
 
@@ -35,13 +35,9 @@
                     WSobj = new MozWebSocket("ws://localhost:843/example");
                 } else {
                     WSobj = new WebSocket("ws://localhost:843/example");
-                }       
+                }
     
-                // Change host/port here to your own Web Socket server.
-                WSobj = new WebSocket();
-
                 WSobj.onopen = function() {
-            
                     output("onopen");
                     
                     //send JSON to server

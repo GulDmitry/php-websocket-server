@@ -91,7 +91,7 @@ class Connection
 
             $def_header = array(
                 'Sec-WebSocket-Accept' => $this->_securityDigest07($headers['Sec-WebSocket-Key']),
-                'Sec-WebSocket-Protocol' => 'chat'
+                //'Sec-WebSocket-Protocol' => 'chat'
             );
             $digest = '';
         } else {
@@ -112,8 +112,8 @@ class Connection
         $upgrade = "HTTP/1.1 ${status}\r\n" .
                 "Upgrade: WebSocket\r\n" .
                 "Connection: Upgrade\r\n" .
-                "${header_str}$digest";
-
+                "${header_str}$digest\r\n";
+               
         socket_write($this->_socket, $upgrade, strlen($upgrade));
 
         $this->_handshaked = true;
@@ -136,41 +136,82 @@ class Connection
     /**
      * See http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76#section-4.2
      * input must be either 0x00...0xFF or 0x00|0xFF
-     * 0x00 - chr(0); 0xFF - char(255)
+     * 0x00 - chr(0); 0xFF - char(255); 0x01 - char(255)
      * 
      * @param string $data
      */
     private function _handle($data)
     {
-        $this->log($data);
+//        _This section is non-normative._
+//
+//   o  A single-frame unmasked text message
+//
+//      *  0x81 0x05 0x48 0x65 0x6c 0x6c 0x6f (contains "Hello")
+//
+//   o  A single-frame masked text message
+//
+//      *  0x81 0x85 0x37 0xfa 0x21 0x3d 0x7f 0x9f 0x4d 0x51 0x58
+//         (contains "Hello")
+//
+//   o  A fragmented unmasked text message
+//
+//      *  0x01 0x03 0x48 0x65 0x6c (contains "Hel")
+//
+//      *  0x80 0x02 0x6c 0x6f (contains "lo")
+//
+//   o  Ping request and response
+//
+//      *  0x89 0x05 0x48 0x65 0x6c 0x6c 0x6f (contains a body of "Hello",
+//         but the contents of the body are arbitrary)
+//
+//      *  0x8a 0x05 0x48 0x65 0x6c 0x6c 0x6f (contains a body of "Hello",
+//         matching the body of the ping)
+//
+//   o  256 bytes binary message in a single unmasked frame
+//
+//      *  0x82 0x7E 0x0100 [256 bytes of binary data]
+//
+//   o  64KiB binary message in a single unmasked frame
+//
+//      *  0x82 0x7F 0x0000000000010000 [65536 bytes of binary data]
+        
+//        var_dump(ord('0x00')); exit;
+        
+//        $chunks = explode(chr(129), $data);
+//
+//        $cnt = count($chunks) - 1;
+//
+//        for ($i = 0; $i < $cnt; $i++) {
+//
+//            $chunk = $chunks[$i];
+//
+//            if (substr($chunk, 0, 1) != chr(0)) {
+//                $this->log('Data incorrectly framed. Dropping connection');
+//
+//                //onDisconnect application
+//                $this->_application->onDisconnect($this);
+//
+//                //remove from server class
+//                $this->_server->socketDisconnect($this);
+//
+//                socket_close($this->_socket);
+//
+//                $this->_socket = null;
+//
+//                return;
+//            }
 
-        $chunks = explode(chr(255), $data);
+        
 
-        $cnt = count($chunks) - 1;
-
-        for ($i = 0; $i < $cnt; $i++) {
-
-            $chunk = $chunks[$i];
-
-            if (substr($chunk, 0, 1) != chr(0)) {
-                $this->log('Data incorrectly framed. Dropping connection');
-
-                //onDisconnect application
-                $this->_application->onDisconnect($this);
-
-                //remove from server class
-                $this->_server->socketDisconnect($this);
-
-                socket_close($this->_socket);
-
-                $this->_socket = null;
-
-                return;
-            }
-
+        
+        
+        
+        
+        
+        
             $this->log('Data framed correctly.');
-            $this->_application->onData(substr($chunk, 1), $this);
-        }
+            $this->_application->onData($data, $this);
+//        }
     }
 
     /**
@@ -194,7 +235,36 @@ class Connection
      */
     public function send($data)
     {
-        if (!@socket_write($this->_socket, chr(0) . $data . chr(255), strlen($data) + 2)) {
+        
+        $frame = Array();
+	$mask = array(rand(0, 255), rand(0, 255), rand(0, 255), rand(0, 255));
+	$encodedData = '';
+	$frame[0] = 0x81;
+	$dataLength = strlen($data);
+ 
+	if($dataLength <= 125)
+	{		
+		$frame[1] = $dataLength + 128;		
+	}
+	else
+	{
+		$frame[1] = 254;  
+		$frame[2] = $dataLength >> 8;
+		$frame[3] = $dataLength & 0xFF; 
+	}	
+	$frame = array_merge($frame, $mask);	
+	for($i = 0; $i < strlen($data); $i++)
+	{		
+		$frame[] = ord($data[$i]) ^ $mask[$i % 4];
+	}
+ 
+	for($i = 0; $i < sizeof($frame); $i++)
+	{
+		$encodedData .= chr($frame[$i]);
+	}		
+    
+    
+        if (!@socket_write($this->_socket, $encodedData, strlen($encodedData))) {
             @socket_close($this->_socket);
             $this->_socket = false;
         }
@@ -244,7 +314,17 @@ class Connection
 
     private function _securityDigest07($key)
     {
-        return base64_decode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'));
+        $key .= "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        $key = sha1($key);
+        $new_key = '';
+
+        for ($i = 0; $i < strlen($key); $i+=2) {
+            $new_key .= chr(intval($key[$i] . $key[$i + 1], 16));
+        }
+
+        $new_key = base64_encode($new_key);
+
+        return $new_key;
     }
 
     /**
