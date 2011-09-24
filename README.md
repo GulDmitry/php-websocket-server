@@ -1,18 +1,19 @@
 PHP WebSocket Server
 ====================
 
-IN PROGRESS...DO NOT DOWNLOAD.
-
 Based on [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser
 
-[+] Add [protocol 07](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-07) 
+Used websocket protocol version 6 or higher.
 
+[+] Add [protocol 10](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10)
 
 ##Changes
 
 ### 1. Native namespaces
 
 ### 2. New methods
+
+### 3. Draft-ietf-hybi-thewebsocketprotocol-10
 
 ####Connection object.
 
@@ -146,5 +147,6 @@ Send\broadcast to all server, application and group connections.
 
 - [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Kaiser 
 - [phpWebSockets](http://code.google.com/p/phpwebsockets/) by Moritz Wutz
+- Simon Samtleben <web@lemmingzshadow.net> - hybi 10 encode, decode fuctions 
 - [web-socket-js](http://github.com/gimite/web-socket-js) by Hiroshi Ichikawa (example)
 - [jQuery](http://jquery.com/) (example)
