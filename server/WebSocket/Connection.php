@@ -152,7 +152,7 @@ class Connection
         ) {
             $decodedData = $this->_hybi10Decode($data);
         } else if (strpos($data, chr(137)) !== false) {
-            $decodedData = chr(138) . $this->_hybi10Decode($data);
+            $decodedData = pack('C', 0x8a) . $this->_hybi10Decode($data);
             $this->send($decodedData);
             socket_close($this->_socket);
             return false;
