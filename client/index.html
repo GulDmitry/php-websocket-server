@@ -10,7 +10,7 @@
         <script type="text/javascript" src="jquery-1.6.4.min.js"></script>
 
         <script type="text/javascript">
-            
+
             // Everything below is the same as using standard WebSocket.
             var WSobj;
 
@@ -18,35 +18,40 @@
             WEB_SOCKET_SWF_LOCATION = "js-ws/WebSocketMain.swf";
             // Set this to dump debug message from Flash to console.log:
             WEB_SOCKET_DEBUG = true;
-    
+
             function init() {
 
                 var appType;
-            
+
                 if (typeof MozWebSocket !== "undefined") {
                     appType = "Mozilla";
                 } else if (window.WebSocket) {
                     appType = "Chrome";
-                } 
-            
+                }
+
                 //constant: see web_socket.
                 // Connect to Web Socket.
                 if (appType == "Mozilla") {
+                    if($.browser.version.slice(0,1) < 6){
+                      alert('Use FF 6+');
+                      return false;
+                    }
+
                     WSobj = new MozWebSocket("ws://localhost:843/example");
                 } else {
                     WSobj = new WebSocket("ws://localhost:843/example");
                 }
-    
+
                 WSobj.onopen = function() {
                     output("onopen");
-                    
+
                     //send JSON to server
                     WSobj.send(JSON.stringify({
                         type:'new_user',
                         group_id:1
-                    }))   
+                    }))
                 };
-                
+
                 WSobj.onmessage = function(e) {
                     // e.data contains received string.
                     output("onmessage: " + e.data);
@@ -59,23 +64,23 @@
                 };
 
             }
-    
+
             function onSubmit() {
                 var input = document.getElementById("input");
                 // You can send message to the Web Socket using WSobj.send.
                 WSobj.send(JSON.stringify({
                     comment: input.value
                 }));
-                
+
                 output("send: " + input.value);
                 input.value = "";
                 input.focus();
             }
-    
+
             function onCloseClick() {
                 WSobj.close();
             }
-    
+
             function output(str) {
                 var log = document.getElementById("log");
                 var escaped = str.replace(/&/, "&amp;").replace(/</, "&lt;").
