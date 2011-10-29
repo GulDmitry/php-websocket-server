@@ -27,33 +27,33 @@ class ExampleApplication extends Application
 
     public function onData($jData, $client)
     {
-        $data = json_decode($jData);
-
-        switch (isset($data->type) ? $data->type : null) {
-
-            // add to group or disconnect
-            case 'new_user':
-
-                isset($data->group_id) ?
-                                $client->setGroup($data->group_id) :
-                                $client->onDisconnect();
-                return;
-                break;
-
-            case 'close':
-                $client->onDisconnect();
-                return;
-                break;
-
-            default:
-                break;
-        }
+//        $data = json_decode($jData);
+//
+//        switch (isset($data->type) ? $data->type : null) {
+//
+//            // add to group or disconnect
+//            case 'new_user':
+//
+//                isset($data->group_id) ?
+//                                $client->setGroup($data->group_id) :
+//                                $client->onDisconnect();
+//                return;
+//                break;
+//
+//            case 'close':
+//                $client->onDisconnect();
+//                return;
+//                break;
+//
+//            default:
+//                break;
+//        }
 
 //        to current socket
 //        $client->send($data->comment);
 //
 //        to all server sockets
-        $client->sendServer($data->comment);
+        $client->sendServer('echo!');
 
 //        to all server sockets exclude sender
 //        $client->broadcastServer($data->comment);
