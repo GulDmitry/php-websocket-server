@@ -5,7 +5,7 @@ Based on [php-websocket](https://github.com/nicokaiser/php-websocket) by Nico Ka
 
 Used websocket [protocol 10](http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10) or higher.
 
-If you want more powerful server see: [Jeff Morgan websocket server](https://github.com/jam1401/PHP-Websockets-Server)
+If you want more powerful server see: [Jeff Morgan websocket server](https://github.com/jam1401/PHP-Websockets-Server), also you can look in the direction of the [this](https://github.com/lemmingzshadow/php-websocket) server, especially for php client implementation. :-)
 
 ##Changes
 
