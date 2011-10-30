@@ -85,7 +85,6 @@ class Connection
             return false;
         }
 
-
         $header_str = '';
         foreach ($def_header as $key => $value) {
             $header_str .= $key . ': ' . $value . "\r\n";
@@ -106,6 +105,11 @@ class Connection
         return true;
     }
 
+    /**
+     * Receive client data.
+     *
+     * @param string $data
+     */
     public function onData($data)
     {
         if ($this->_handshaked) {
@@ -149,9 +153,9 @@ class Connection
                 strpos($data, chr(1)) !== false ||
                 strpos($data, chr(130) !== false)
         ) {
-            $decodedData = $this->_hybi10Decode($data);
+            $decodedData = $this->_hybiDecode($data);
         } else if (strpos($data, chr(137)) !== false) {
-            $decodedData = pack('C', 0x8a) . $this->_hybi10Decode($data);
+            $decodedData = pack('C', 0x8a) . $this->_hybiDecode($data);
             $this->send($decodedData);
             socket_close($this->_socket);
             return false;
@@ -188,88 +192,12 @@ class Connection
      */
     public function send($data)
     {
-        $encodedData = $this->_hybi10Encode(array(
-            'size' => strlen($data),
-            'frame' => $data,
-            'binary' => false
-                ));
+        $encodedData = $this->_hybiEncode($data, false);
 
         if (!@socket_write($this->_socket, $encodedData, strlen($encodedData))) {
             @socket_close($this->_socket);
             $this->_socket = false;
         }
-    }
-
-    /**
-     * @author Jeff Morgan @link https://github.com/jam1401
-     *
-     * Sends a packet of data to a client over the websocket.
-     *
-     * 	$data is an array with the following structure
-     * Array {
-     * 		'size': The size in bytes of the data frame
-     * 		'frame': A buffer containing the data received
-     * 		'binary': boolean indicator true is frame is binary false if frame is utf8
-     * }
-     *
-     *
-     */
-    private function _hybi10Encode($data)
-    {
-        $databuffer = array();
-        $rawBytesSend = $data['size'] + 2;
-        $packet;
-        $sendlength = $data['size'];
-
-
-        if ($sendlength > 65535) {
-            // 64bit
-            array_pad($databuffer, 10, 0);
-            $databuffer[1] = 127;
-            $lo = $sendlength | 0;
-            $hi = ($sendlength - $lo) / 4294967296;
-
-            $databuffer[2] = ($hi >> 24) & 255;
-            $databuffer[3] = ($hi >> 16) & 255;
-            $databuffer[4] = ($hi >> 8) & 255;
-            $databuffer[5] = $hi & 255;
-
-            $databuffer[6] = ($lo >> 24) & 255;
-            $databuffer[7] = ($lo >> 16) & 255;
-            $databuffer[8] = ($lo >> 8) & 255;
-            $databuffer[9] = $lo & 255;
-
-            $rawBytesSend += 8;
-        } else if ($sendlength > 125) {
-            // 16 bit
-            array_pad($databuffer, 4, 0);
-            $databuffer[1] = 126;
-            $databuffer[2] = ($sendlength >> 8) & 255;
-            $databuffer[3] = $sendlength & 255;
-
-            $rawBytesSend += 2;
-        } else {
-            array_pad($databuffer, 2, 0);
-            $databuffer[1] = $sendlength;
-        }
-
-        // Set op and find
-        $databuffer[0] = (128 + ($data['binary'] ? 2 : 1));
-        $packet = pack('c', $databuffer[0]);
-        // Clear masking bit
-        //$databuffer[1] &= ~128;
-        // write out the packet header
-        for ($i = 1; $i < count($databuffer); $i++) {
-            //$packet .= $databuffer[$i];
-            $packet .= pack('c', $databuffer[$i]);
-        }
-
-        // write out the packet data
-        for ($i = 0; $i < $data['size']; $i++) {
-            $packet .= $data['frame'][$i];
-        }
-
-        return $packet;
     }
 
     /**
@@ -304,11 +232,6 @@ class Connection
         $this->_server->socketDisconnect($this);
 
         socket_close($this->_socket);
-    }
-
-    private function _securityDigest($key)
-    {
-        return base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
     }
 
     /**
@@ -421,7 +344,89 @@ class Connection
         return $this->_group;
     }
 
-    private function _hybi10Decode($data)
+    /**
+     * Key for decode client data.
+     *
+     * @param string $key Client header key
+     * @return string
+     */
+    private function _securityDigest($key)
+    {
+        return base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
+    }
+
+    /**
+     * @author Jeff Morgan @link https://github.com/jam1401
+     *
+     * Sends a packet of data to a client over the websocket.
+     *
+     * @param string $data A buffer containing the data received
+     * @param bool $binary Indicator true is frame is binary false if frame is utf8
+     */
+    private function _hybiEncode($data, $binary)
+    {
+        $databuffer = array();
+        $sendlength = strlen($data);
+        $rawBytesSend = $sendlength + 2;
+        $packet;
+
+        if ($sendlength > 65535) {
+            // 64bit
+            array_pad($databuffer, 10, 0);
+            $databuffer[1] = 127;
+            $lo = $sendlength | 0;
+            $hi = ($sendlength - $lo) / 4294967296;
+
+            $databuffer[2] = ($hi >> 24) & 255;
+            $databuffer[3] = ($hi >> 16) & 255;
+            $databuffer[4] = ($hi >> 8) & 255;
+            $databuffer[5] = $hi & 255;
+
+            $databuffer[6] = ($lo >> 24) & 255;
+            $databuffer[7] = ($lo >> 16) & 255;
+            $databuffer[8] = ($lo >> 8) & 255;
+            $databuffer[9] = $lo & 255;
+
+            $rawBytesSend += 8;
+        } else if ($sendlength > 125) {
+            // 16 bit
+            array_pad($databuffer, 4, 0);
+            $databuffer[1] = 126;
+            $databuffer[2] = ($sendlength >> 8) & 255;
+            $databuffer[3] = $sendlength & 255;
+
+            $rawBytesSend += 2;
+        } else {
+            array_pad($databuffer, 2, 0);
+            $databuffer[1] = $sendlength;
+        }
+
+        // Set op and find
+        $databuffer[0] = (128 + ($binary ? 2 : 1));
+        $packet = pack('c', $databuffer[0]);
+        // Clear masking bit
+        //$databuffer[1] &= ~128;
+        // write out the packet header
+        for ($i = 1; $i < count($databuffer); $i++) {
+            //$packet .= $databuffer[$i];
+            $packet .= pack('c', $databuffer[$i]);
+        }
+
+        // write out the packet data
+        for ($i = 0; $i < $sendlength; $i++) {
+            $packet .= $data[$i];
+        }
+
+        return $packet;
+    }
+
+    /**
+     * @author Simon Samtleben @link https://github.com/lemmingzshadow
+     *
+     * @param string $data
+     * @return string Decoded data
+     */
+    private function _hybiDecode($data)
     {
         $bytes = $data;
         $dataLength = '';

@@ -4,7 +4,7 @@ namespace WebSocket\Application;
 
 /**
  * WebSocket Server Application
- * 
+ *
  * @author Nico Kaiser <nico@kaiser.me>
  * @author Dmitry Gulyakevich
  */
@@ -15,17 +15,24 @@ abstract class Application
     private $_clients = array();
 
     /**
-     * Singleton 
+     * Singleton.
      */
     protected function __construct()
     {
-        
+
     }
 
+    /**
+     * Singleton.
+     */
     final private function __clone()
     {
-        
+
     }
+
+    /*
+     * Singleton.
+     */
 
     final public static function getInstance()
     {
@@ -37,11 +44,19 @@ abstract class Application
         return self::$instances[$calledClassName];
     }
 
+    /**
+     *
+     * @param object $connection Connection.
+     */
     public function onConnect($connection)
     {
         $this->_clients[] = $connection;
     }
 
+    /**
+     *
+     * @param object $connection Connection.
+     */
     public function onDisconnect($connection)
     {
         $key = array_search($connection, $this->_clients);
@@ -51,9 +66,9 @@ abstract class Application
     }
 
     /**
-     * Send to application sockets
-     * 
-     * @param string $message 
+     * Send to application sockets.
+     *
+     * @param string $message
      */
     public function sendApp($message)
     {
@@ -64,10 +79,10 @@ abstract class Application
     }
 
     /**
-     * Send to application sockets with exclude
+     * Send to application sockets with exclude.
      *
      * @param Connection $excludeConnection
-     * @param string $message 
+     * @param string $message
      */
     public function broadcastApp($excludeConnection, $message)
     {
@@ -83,11 +98,19 @@ abstract class Application
         }
     }
 
+    /**
+     * Tick.
+     */
     public function onTick()
     {
-        
+
     }
 
+    /**
+     * Get all application conections.
+     *
+     * @return array Array of objects (Connection)
+     */
     public function getConnections()
     {
         return $this->_clients;

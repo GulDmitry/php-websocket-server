@@ -9,20 +9,23 @@ namespace WebSocket\Application;
 class ExampleApplication extends Application
 {
 
-//    public function onConnect($connection)
+//    public function onConnect($client)
 //    {
-//        parent::onConnect($connection);
+//        parent::onConnect($client);
 //
+//        $client->broadcastServer('Join!');
 //    }
 //
-//    public function onDisconnect($connection)
+//    public function onDisconnect($client)
 //    {
-//        parent::onDisconnect($connection);
+//        $client->broadcastServer('Bye-bye!');
+//
+//        parent::onDisconnect($client);
 //    }
 //
 //    public function onTick()
 //    {
-//        //every second
+//        $this->sendApp('Approximately every second second within the application.');
 //    }
 
     public function onData($jData, $client)
@@ -32,7 +35,7 @@ class ExampleApplication extends Application
         switch (isset($data->type) ? $data->type : null) {
 
             // add to group or disconnect
-            case 'new_user':
+            case 'join':
 
                 isset($data->group_id) ?
                                 $client->setGroup($data->group_id) :

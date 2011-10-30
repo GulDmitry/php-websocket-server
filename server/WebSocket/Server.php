@@ -37,19 +37,19 @@ class Server extends Socket
             foreach ($changed_sockets as $socket) {
                 // client connect first time
                 if ($socket == $this->_master) {
-                    $ressource = socket_accept($this->_master);
-                    if ($ressource < 0) {
-                        $this->log('Socket error: ' . socket_strerror(socket_last_error($ressource)));
+                    $resource = socket_accept($this->_master);
+                    if ($resource < 0) {
+                        $this->log('Socket error: ' . socket_strerror(socket_last_error($resource)));
                         continue;
                     } else {
-                        $client = new Connection($this, $ressource);
-                        $this->_clients[$ressource] = $client;
-                        $this->_allsockets[] = $ressource;
+                        $client = new Connection($this, $resource);
+                        $this->_clients[$resource] = $client;
+                        $this->_allsockets[] = $resource;
                     }
                     // client send message or disconnect
                 } else {
                     $client = $this->_clients[$socket];
-                    $bytes = @socket_recv($socket, $data, 4096, 0);
+                    $bytes = socket_recv($socket, $data, 4096, 0);
 
                     //client disconnected
                     if ($bytes === 0) {
@@ -66,8 +66,8 @@ class Server extends Socket
 
     /**
      * Enable\Disable debug mode
-     * 
-     * @param bool $flag 
+     *
+     * @param bool $flag
      */
     public function setDebug($flag)
     {
@@ -76,14 +76,20 @@ class Server extends Socket
 
     /**
      * Get debug mode
-     * 
-     * @return bool debug 
+     *
+     * @return bool
      */
     public function getDebug()
     {
         return (bool) $this->_debug;
     }
 
+    /**
+     * Get Application by register name.
+     *
+     * @param string $key
+     * @return mixed Application object | false if app not exists
+     */
     public function getApplication($key)
     {
         if (array_key_exists($key, $this->_applications)) {
@@ -93,6 +99,12 @@ class Server extends Socket
         }
     }
 
+    /**
+     * Register application
+     *
+     * @param string $key App name
+     * @param object $application Class.
+     */
     public function registerApplication($key, $application)
     {
         $this->_applications[$key] = $application;
@@ -100,9 +112,9 @@ class Server extends Socket
 
     /**
      * Console log
-     * 
+     *
      * @param string $message
-     * @param string $type 
+     * @param string $type
      */
     public function log($message, $type = 'info')
     {
@@ -111,8 +123,8 @@ class Server extends Socket
 
     /**
      * Sends data from the current connection to all other connections on the _server_
-     * 
-     * @param string $message 
+     *
+     * @param string $message
      */
     public function send($message)
     {
@@ -122,11 +134,11 @@ class Server extends Socket
     }
 
     /**
-     * Sends data from the current connection to all other connections on the _server_, 
+     * Sends data from the current connection to all other connections on the _server_,
      * excluding the sending connection.
-     *  
+     *
      * @param Connection $excludeConnection
-     * @param string $message 
+     * @param string $message
      */
     public function broadcast($excludeConnection, $message)
     {
@@ -144,8 +156,8 @@ class Server extends Socket
 
     /**
      * Delete connection from server
-     * 
-     * @param Connection $connect 
+     *
+     * @param Connection $connect
      */
     public function socketDisconnect($connect)
     {
@@ -161,7 +173,7 @@ class Server extends Socket
 
     /**
      * @param mixed $key
-     * @param Connection $connection 
+     * @param Connection $connection
      */
     public function addToGroup($key, $connection)
     {
@@ -170,7 +182,7 @@ class Server extends Socket
 
     /**
      * Get connections by group key
-     * 
+     *
      * @param mixed $key
      * @return mixed Connections in group or null
      */
@@ -181,9 +193,9 @@ class Server extends Socket
 
     /**
      * Send to current connection group if $key = false
-     * 
+     *
      * @param mixed $key Group identifier
-     * @param string $message 
+     * @param string $message
      */
     public function sendGroup($message, $key)
     {
@@ -199,7 +211,7 @@ class Server extends Socket
     /**
      * Broadcast to current connection group if $key = false
      *
-     * @param string $message 
+     * @param string $message
      * @param Connection $excludeConnectio
      * @param mixed $key Group identifier
      */
@@ -222,7 +234,7 @@ class Server extends Socket
 
     /**
      * Return connections and sockets (with master socket) count
-     * 
+     *
      * @return array ['cliets', 'sockets']
      */
     public function showSocketsInfoCount()
