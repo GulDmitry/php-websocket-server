@@ -169,6 +169,12 @@ class Server extends Socket
             unset($this->_clients[$socketKey]);
             unset($this->_allsockets[$sKey]);
         }
+
+        // remove from group
+        $groupKey = $connect->getGroup();
+        if ($groupKey) {
+            unset($this->_groups[$groupKey][array_search($connect, $this->_groups[$groupKey])]);
+        }
     }
 
     /**

@@ -48,7 +48,7 @@ class Connection
 
         if (!preg_match('/\AGET (\S+) HTTP\/1.1\z/', $lines[0], $matches)) {
             $this->log('Invalid request: ' . $lines[0]);
-            socket_close($this->_socket);
+            $this->onDisconnect();
             return false;
         }
 
@@ -64,7 +64,7 @@ class Connection
         $this->_application = $this->_server->getApplication(substr($path, 1)); // e.g. '/echo'
         if (!$this->_application) {
             $this->log('Invalid application: ' . $path);
-            socket_close($this->_socket);
+            $this->onDisconnect();
             return false;
         }
 
@@ -81,7 +81,7 @@ class Connection
             );
         } else {
             $this->log('Incorrect headers or old protocol. Use hubi-draft 07+');
-            socket_close($this->_socket);
+            $this->onDisconnect();
             return false;
         }
 
@@ -157,11 +157,11 @@ class Connection
         } else if (strpos($data, chr(137)) !== false) {
             $decodedData = pack('C', 0x8a) . $this->_hybiDecode($data);
             $this->send($decodedData);
-            socket_close($this->_socket);
+            $this->onDisconnect();
             return false;
         } else {
             $this->log('Data incorrectly framed. Dropping connection');
-            socket_close($this->_socket);
+            $this->onDisconnect();
             return false;
         }
 
@@ -182,7 +182,7 @@ class Connection
         $policy .= '<allow-access-from domain="*" to-ports="*"/>' . "\n";
         $policy .= '</cross-domain-policy>' . "\n";
         socket_write($this->_socket, $policy, strlen($policy));
-        socket_close($this->_socket);
+        $this->onDisconnect();
     }
 
     /**
@@ -195,8 +195,7 @@ class Connection
         $encodedData = $this->_hybiEncode($data, false);
 
         if (!@socket_write($this->_socket, $encodedData, strlen($encodedData))) {
-            @socket_close($this->_socket);
-            $this->_socket = false;
+            $this->onDisconnect();
         }
     }
 
@@ -231,7 +230,7 @@ class Connection
         // remove from server stack
         $this->_server->socketDisconnect($this);
 
-        socket_close($this->_socket);
+        @socket_close($this->_socket);
     }
 
     /**
