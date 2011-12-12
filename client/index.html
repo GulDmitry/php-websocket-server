@@ -31,15 +31,22 @@
                 //constant: see web_socket.
                 // Connect to Web Socket.
                 if (appType == "Mozilla") {
-                    if($.browser.version.slice(0,1) < 6){
-                        alert('Use FF 6+');
-                        return false;
-                    }
-
                     WSobj = new MozWebSocket("ws://localhost:843/example");
                 } else {
                     WSobj = new WebSocket("ws://localhost:843/example");
                 }
+
+                //var CLOSED     = 3
+                //var CLOSING    = 2
+                //var CONNECTING = 0
+                //var OPEN       = 1
+	
+                setTimeout(function () {
+                    if(WSobj.readyState != 1){
+                        console.log(WSobj.readyState)
+                        alert('Your browser not support webSocket.')
+                    }
+                }, 2000)
 
                 WSobj.onopen = function() {
                     output("onopen");
